@@ -1,0 +1,7 @@
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Gin and MilkTea\ChatServer\bin\Release\ChatServer.exe.config
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Gin and MilkTea\ChatServer\bin\Release\ChatServer.exe
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Gin and MilkTea\ChatServer\bin\Release\ChatServer.pdb
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Gin and MilkTea\ChatServer\bin\Release\websocket-sharp.dll
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Gin and MilkTea\ChatServer\bin\Release\websocket-sharp.xml
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Gin and MilkTea\ChatServer\obj\Release\ChatServer.exe
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Gin and MilkTea\ChatServer\obj\Release\ChatServer.pdb

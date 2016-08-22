@@ -1,0 +1,9 @@
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Starter Program\ChatServer-Release\ChatServer-Release\ChatServer\bin\Debug\ChatServer.exe.config
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Gin and MilkTea\ChatServer\bin\Debug\ChatServer.exe.config
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Gin and MilkTea\ChatServer\bin\Debug\ChatServer.exe
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Gin and MilkTea\ChatServer\bin\Debug\ChatServer.pdb
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Gin and MilkTea\ChatServer\obj\Debug\ChatServer.csprojResolveAssemblyReference.cache
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Gin and MilkTea\ChatServer\obj\Debug\ChatServer.exe
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Gin and MilkTea\ChatServer\obj\Debug\ChatServer.pdb
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Gin and MilkTea\ChatServer\bin\Debug\websocket-sharp.dll
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Gin and MilkTea\ChatServer\bin\Debug\websocket-sharp.xml
