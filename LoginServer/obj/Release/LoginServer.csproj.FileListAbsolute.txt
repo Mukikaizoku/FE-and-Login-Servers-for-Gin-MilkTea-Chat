@@ -1,0 +1,5 @@
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Gin and MilkTea\LoginServer\bin\Release\LoginServer.exe.config
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Gin and MilkTea\LoginServer\bin\Release\LoginServer.exe
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Gin and MilkTea\LoginServer\bin\Release\LoginServer.pdb
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Gin and MilkTea\LoginServer\obj\Release\LoginServer.exe
+C:\Users\mikm\Documents\Projects\Gin and MilkTea\Gin and MilkTea\LoginServer\obj\Release\LoginServer.pdb
