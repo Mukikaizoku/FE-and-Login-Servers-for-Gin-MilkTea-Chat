@@ -1105,6 +1105,7 @@ namespace ChatServer
                     }
                 case FBMessageType.Room_Join:
                     {
+                        requestHeader.type = CFMessageType.Room_Join;
                         if (header.state == FBMessageState.Success)
                         {
                             //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
@@ -1120,7 +1121,6 @@ namespace ChatServer
                         else if (header.state == FBMessageState.Fail)
                         {
                             //Determine if the room join failure is due to lack of existence or if it's in a different server
-                            requestHeader.type = CFMessageType.Room_Join;
                             if (header.length == 0)
                             {
                                 Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
