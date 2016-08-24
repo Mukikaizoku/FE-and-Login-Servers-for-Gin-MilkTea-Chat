@@ -32,7 +32,7 @@ namespace LoginServer
         //Code for a thread to detect the escape key for exiting the program
         private static void ExitInput()
         {
-            ConsoleKeyInfo input;
+            ConsoleKeyInfo input = new ConsoleKeyInfo();
             do
             {
                 input = Console.ReadKey(false);
@@ -45,6 +45,8 @@ namespace LoginServer
         private static void Setup(string[] args, out string[] parameters)
         {
             parameters = new string[4];    //listeningPort, LS-IP, LoginServer-port, DB-IP, DB-port, maxClientNumber
+            string[] fileParameters = new string[4];
+            int x = 0;
 
             //Server setup process:
             // - Either get setup-values from command line OR config file (possibly default config file)
@@ -72,12 +74,12 @@ namespace LoginServer
                             setupFileName = "setup.txt";                                            //Default setup filename
                         }
 
-                        var path = Path.Combine(Directory.GetCurrentDirectory(), setupFileName);    //Get the location of the config file
+                        var pathh = Path.Combine(Directory.GetCurrentDirectory(), setupFileName);    //Get the location of the config file
 
                         //Be sure to catch any file reading errors
                         try
                         {
-                            args = File.ReadAllLines(path);                                         //Read the config file
+                            args = File.ReadAllLines(pathh);                                         //Read the config file
                         }
                         catch (FileNotFoundException e)
                         {
@@ -92,35 +94,49 @@ namespace LoginServer
                             Console.WriteLine("\nPlease ensure that " + setupFileName + " is contained within the application's directory.");
                         }
                         break;
+                    default:
+                        x = 1;
+                        parameters[0] = args[0];
+                        //if (args.Length > 1)
+                        //{
+                        //    parameters[4] = args[1];
+                        //}
+                        break;
                 }
             }
-            else                                                                                    //Default to reading the data from the default setup file (setup.txt)
-            {
-                var path = Path.Combine(Directory.GetCurrentDirectory(), "setup.txt");              //Set the location of setup.txt
 
-                //Be sure to catch any file reading errors
-                try
-                {
-                    args = File.ReadAllLines(path);                                                 //Read the setup.txt
-                }
-                catch (FileNotFoundException e)
-                {
-                    Console.WriteLine("\nFileNotFoundException during setup.text reading attempt.\n");
-                    Console.WriteLine(e.HResult + " : " + e.Message);
-                    Console.WriteLine("\nPlease ensure that setup.text is contained within the application's directory.");
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("\nException during setup.text reading attempt.\n");
-                    Console.WriteLine(e.HResult + " : " + e.Message);
-                    Console.WriteLine("\nPlease ensure that setup.text is contained within the application's directory.");
-                }
+            //Default to reading the data from the default setup file (setup.txt)
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "setup.txt");              //Set the location of setup.txt
+
+            //Be sure to catch any file reading errors
+            try
+            {
+                fileParameters = File.ReadAllLines(path);                                       //Read the setup.txt
+            }
+            catch (FileNotFoundException e)
+            {
+                Console.WriteLine("\nFileNotFoundException during setup.text reading attempt.\n");
+                Console.WriteLine(e.HResult + " : " + e.Message);
+                Console.WriteLine("\nPlease ensure that setup.text is contained within the application's directory.");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("\nException during setup.text reading attempt.\n");
+                Console.WriteLine(e.HResult + " : " + e.Message);
+                Console.WriteLine("\nPlease ensure that setup.text is contained within the application's directory.");
             }
 
             //Load parameters from the command line arguments or what was obtained by a config file
-            for (int i = 0; i < ((args.Length >= 4) ? 4 : args.Length); i++)
+            for (int i = x; i < 4; i++)         //((args.Length >= 5) ? 5 : args.Length)
             {
-                parameters[i] = args[i];
+                if (args.Length > i && (args[i] == null || args[i] == ""))
+                {
+                    parameters[i] = args[i];
+                }
+                else
+                {
+                    parameters[i] = fileParameters[i];
+                }
             }
 
             //Parameter Validation

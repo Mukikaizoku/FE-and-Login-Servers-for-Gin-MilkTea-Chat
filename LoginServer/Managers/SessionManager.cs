@@ -200,10 +200,12 @@ namespace LoginServer
                 }
             }
 
+            Console.WriteLine("................................................Removing Closed Sessions................................................");
             foreach (Session session in sessionToRemove)
             {
                 RemoveSession(session);
             }
+            Console.WriteLine("........................................................................................................................");
 
         }
 
@@ -273,7 +275,7 @@ namespace LoginServer
                 if(session != null && connectedSessions.ContainsKey(session.sessionId))
                 {
                     Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                    Console.WriteLine(new string(session.id) +"(" + session.sessionId + ", " + session.ip + ") has exited");
+                    Console.WriteLine(new string(session.id) +"(" + session.sessionId + ", " + session.ip + ") has exited or timed out.");
 
                     connectedSessions.Remove(session.sessionId);
 
@@ -284,6 +286,9 @@ namespace LoginServer
                         if (session.socket != null)
                         {
                             session.socket.Shutdown(SocketShutdown.Both);
+                        }
+                        if (session.socket != null)
+                        {
                             session.socket.Close();
                         }
                     }
@@ -293,6 +298,10 @@ namespace LoginServer
                         Console.WriteLine("\tAll: " + e.GetType().ToString());
                         Console.WriteLine("\tSource: " + e.Source.ToString());
                         Console.WriteLine("\tMessage: " + e.Message.ToString());
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        //
                     }
                     catch (Exception e)
                     {

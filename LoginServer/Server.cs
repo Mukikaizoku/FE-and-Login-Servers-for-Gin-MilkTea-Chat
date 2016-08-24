@@ -7,20 +7,24 @@ using System.Threading.Tasks;
 
 namespace LoginServer
 {
+    struct HeartBeatInfo
+    {
+        public int clientID;
+        public int healthCheckCount;
+    }
+
     //Server Controller Class
     class Server
     {
         private IPEndPoint ipEndPoint;
         private Socket listenSock;
         private Session backEndSession;
-        //private FBSessionProcessor fbSessionProcessor;
-        //private CFSessionProcessor cfSessionProcessor;
-        //private Thread acceptingThread;
-        
         private string backEndIp;
         private int backEndPort;
         private int listeningPort;
         private int maxClientNum;
+
+        Queue<HeartBeatInfo> heartBeatSentQueue = new Queue<HeartBeatInfo>();
 
         //Constructor that sets up and initializes the server controller
         public Server(int listeningPort, string backEndIp, int backEndPort, int maxClientNum)
@@ -210,9 +214,9 @@ namespace LoginServer
                 Console.Write("\tType: " + e.GetType().ToString());
                 Console.WriteLine("\tMessage: " + e.Message.ToString());
             }
-            Session session = SessionManager.GetInstance().MakeNewSession(newClient, false);                        //Create a new session for the client
+            Session session = SessionManager.GetInstance().MakeNewSession(newClient, false);                                //Create a new session for the client
             Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-            Console.WriteLine("Client(" + session.sessionId + ", " + session.ip + ")" + " is Connected");         //Report to the console
+            Console.WriteLine("[CONNECT] Client " + session.sessionId + " (" + session.ip + ")" + " is Connected");         //Report to the console
             AsyncAcceptHandler();
         }
 
@@ -221,16 +225,21 @@ namespace LoginServer
         /// </summary>
         private void MainProcess()
         {
-            Thread.Sleep(30000);
+            Thread.Sleep(70000);
             HealthCheckProcess();
         }
 
         private void HealthCheckProcess()
         {
+            HeartBeatInfo heartBeatInfo;
             List<Session> timedoutSessions = SessionManager.GetInstance().GetTimedoutSessions();
+            Console.WriteLine("...................................................Sending Heartbeats...................................................");
             foreach (Session session in timedoutSessions)
             {
-                session.ProcessTimeoutSession();
+                if (session.ProcessTimeoutSession(out heartBeatInfo))
+                {
+                    heartBeatSentQueue.Enqueue(heartBeatInfo);
+                }
                 if (session.socket == backEndSession?.socket)
                 {
                     if (!session.isConnected)
@@ -242,8 +251,22 @@ namespace LoginServer
                     }
                 }
             }
-            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-            Console.WriteLine("Removing Closed Sessions. . .");
+            if (heartBeatSentQueue.Count > 0)
+            {
+                Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+            }
+            int x = 0;
+            foreach (HeartBeatInfo heart in heartBeatSentQueue)
+            {
+                Console.Write("[Client " + heart.clientID + ":" + heart.healthCheckCount + "] ");
+                x++;
+                if (x % 8 == 0)
+                {
+                    Console.WriteLine();
+                }
+            }
+            Console.WriteLine();
+            heartBeatSentQueue.Clear();
             SessionManager.GetInstance().RemoveClosedSessions();
         }
     }

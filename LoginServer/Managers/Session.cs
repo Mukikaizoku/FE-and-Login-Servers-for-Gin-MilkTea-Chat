@@ -217,20 +217,125 @@ namespace LoginServer
             
             if (bytesReceived == -1) //Fin received
             {
+                //if (isBackEndSession)
+                //{
+                //    Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+                //    Console.WriteLine("*****Connection with back-end server Suddenly Abrupted******");
+                //    Console.WriteLine("*****Initializing back-end reconnect. . .******");
+                //    IPEndPoint backEndPort = socket.RemoteEndPoint as IPEndPoint;
+                //    try
+                //    {
+                //        socket.Close();
+                //    }
+                //    catch (Exception e)
+                //    {
+
+                //    }
+                //    socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
+                //    bool isBackEndConnected = false;
+
+                //    while (isBackEndConnected == false)
+                //    {
+                //        try
+                //        {
+                //            socket.Connect(backEndPort);
+                //        }
+                //        catch (SocketException)
+                //        {
+                //            Console.WriteLine("??Where is the back-end??");
+                //            Thread.Sleep(1000);
+                //            continue;
+                //        }
+                //        catch (Exception e)
+                //        {
+                //            Console.WriteLine("Exception throw during socket.Connect.");
+                //            Console.WriteLine("\tType: " + e.GetType().ToString());
+                //            Console.WriteLine("\tMessage: " + e.Message.ToString());
+                //            Thread.Sleep(1000);
+                //        }
+
+                //        if (socket.Connected)
+                //        {
+                //            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+                //            Console.WriteLine(">>Successfully Reconnected to BackEnd server! ! !");
+                //            Console.WriteLine("\t>>Reinitializing server functions. . .");
+                //            isBackEndConnected = true;
+                //        }
+                //    }
+                //    StartAsyncHeaderReceive();
+                //    return;
+                //}
+                Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+                Console.WriteLine("*****Connection from " + sessionId + " Suddenly Abrupted******");
+                socket.Close();
+                return;
+            }
+
+            if (isBackEndSession)
+            {
+                headerBE = (FBHeader)Serializer.ByteToStructure(headerByte, typeof(FBHeader));
+                FormatMessage(headerBE, false);
+                //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+                //Console.Write("[RECEIVE] ");
+                //Console.Write("[" + headerBE.type + "] ");
+                //Console.Write("[" + bytesReceived + " bytes] ");
+                //Console.Write("[STATE." + headerBE.state + "] ");
+                //Console.Write("[LENGTH." + headerBE.length + "] ");
+                //Console.WriteLine("[FROM: Gin Back-End]");
+                bodyLength = headerBE.length;
+            }
+            else
+            {
+                header = (CFHeader)Serializer.ByteToStructure(headerByte, typeof(CFHeader));
+                FormatMessage(header, false);
+                //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+                //Console.Write("[RECEIVE] ");
+                //Console.Write("[" + header.type + "] ");
+                //Console.Write("[" + bytesReceived + " bytes] ");
+                //Console.Write("[STATE." + header.state + "] ");
+                //Console.Write("[LENGTH." + header.length + "] ");
+                //Console.WriteLine("[FROM: " + sessionId + "]");
+                bodyLength = header.length;
+
+                if (header.type == CFMessageType.ConnectionPass && header.state == CFMessageState.SUCCESS)
+                {
+                    //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+                    //Console.WriteLine("Connection Passing succeeded by Client " + sessionId + "!");
+                    return;
+                }
+            }
+
+            if (undefinedMessageCounter > 3)
+            {
+                Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+                Console.WriteLine("*****Undefined Message Spamming from a Connection " + sessionId + " ******");
+                Console.WriteLine("\t *****Messages received from a Connection " + sessionId + " Halted ******");
+                undefinedMessageCounter = 0;
+
+                IPEndPoint backEndPort = null;
+
                 if (isBackEndSession)
                 {
-                    Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                    Console.WriteLine("*****Connection with back-end server Suddenly Abrupted******");
-                    Console.WriteLine("*****Initializing back-end reconnect. . .******");
-                    IPEndPoint backEndPort = socket.RemoteEndPoint as IPEndPoint;
-                    try
-                    {
-                        socket.Close();
-                    }
-                    catch (Exception e)
-                    {
+                    backEndPort = socket.RemoteEndPoint as IPEndPoint;
+                }
 
-                    }
+                //Need to handle a problematic connection here
+                try
+                {
+                    socket.Close();
+                    Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+                    Console.WriteLine("*****Connection with " + sessionId + " Closed ******");
+                }
+                catch (Exception e)
+                {
+                    Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+                    Console.WriteLine("*****Connection with  " + sessionId + " already Closed ******");
+                }
+                if (isBackEndSession)
+                {
+                    Console.WriteLine("*****Initializing back-end reconnect. . .******");
+
                     socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
                     bool isBackEndConnected = false;
@@ -266,59 +371,6 @@ namespace LoginServer
                     StartAsyncHeaderReceive();
                     return;
                 }
-                Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                Console.WriteLine("*****Connection from " + sessionId + " Suddenly Abrupted******");
-                socket.Close();
-                return;
-            }
-
-            if (isBackEndSession)
-            {
-                headerBE = (FBHeader)Serializer.ByteToStructure(headerByte, typeof(FBHeader));
-                Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                Console.WriteLine("Message (" + bytesReceived + " bytes) Received from Back-End.");
-                Console.Write("\t\t Type: " + headerBE.type);
-                Console.Write("\t\t State: " + headerBE.state);
-                Console.WriteLine("\t\t Length: " + headerBE.length);
-                bodyLength = headerBE.length;
-            }
-            else
-            {
-                header = (CFHeader)Serializer.ByteToStructure(headerByte, typeof(CFHeader));
-                Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                Console.WriteLine("Message (" + bytesReceived + " bytes) Received from Client " + sessionId);
-                Console.Write("\t\t Type: " + header.type);
-                Console.Write("\t\t State: " + header.state);
-                Console.WriteLine("\t\t Length: " + header.length);
-                bodyLength = header.length;
-
-                if (header.type == CFMessageType.ConnectionPass && header.state == CFMessageState.SUCCESS)
-                {
-                    Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                    Console.WriteLine("Connection Passing succeeded by Client " + sessionId + "!");
-                    return;
-                }
-            }
-
-            if (undefinedMessageCounter > 2)
-            {
-                Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                Console.WriteLine("*****Undefined Message Spamming from a Connection " + sessionId + " ******");
-                Console.WriteLine("\t *****Messages received from a Connection " + sessionId + " Halted ******");
-                undefinedMessageCounter = 0;
-                //Need to handle a problematic connection here
-                try
-                {
-                    socket.Close();
-                    Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                    Console.WriteLine("*****Connection with " + sessionId + " Closed ******");
-                }
-                catch (Exception e)
-                {
-                    Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                    Console.WriteLine("*****Connection with  " + sessionId + " already Closed ******");
-                }
-                Console.WriteLine();
                 return;
             }
             //If the bodyLength is greater than 0, this means a body message is about to arrive and we need to async receive it
@@ -393,9 +445,6 @@ namespace LoginServer
             CFMessageType type = header.type;
             int bodyLength = header.length;
 
-            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-            Console.WriteLine(">>Received CF " + header.type + " from " + sessionId);
-
             switch (type)
             {
                 case CFMessageType.Signup:
@@ -433,8 +482,7 @@ namespace LoginServer
                 default:
                     undefinedMessageCounter++;
                     Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                    Console.Write(">>Undefined Message Type from " + sessionId);
-                    Console.WriteLine("\t (Type: " + header.type.ToString() + ")");
+                    Console.WriteLine(">>Undefined Message Type from " + sessionId);
                     break;
             }
         }
@@ -447,9 +495,6 @@ namespace LoginServer
         {
             FBMessageType type = header.type;
             int bodyLength = header.length;
-
-            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-            Console.WriteLine("**Received FB " + header.type + " from Gin back-end");
 
             switch (type)
             {
@@ -489,7 +534,6 @@ namespace LoginServer
                     undefinedMessageCounter++;
                     Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
                     Console.WriteLine("**Undefined Message Type from Gin back-end");
-                    Console.WriteLine("\t (Type: " + header.type.ToString() + ")");
                     break;
             }
         }
@@ -508,12 +552,19 @@ namespace LoginServer
             requestHeader.length = Marshal.SizeOf<FBSignupRequestBody>();
             requestHeader.state = FBMessageState.Request;
             requestHeader.sessionId = sessionId;
-            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-            Console.WriteLine("CHECK Session ID " + requestHeader.sessionId.ToString() + " to Gin Back-End Server. . .");
+            //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+            //Console.WriteLine("CHECK Session ID " + requestHeader.sessionId.ToString() + " to Gin Back-End Server. . .");
 
             byte[] headerByte = Serializer.StructureToByte(requestHeader);
-            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-            Console.WriteLine(">>Forwarding " + requestHeader.type.ToString() + " to Gin Back-End Server. . .");
+            FormatMessage(requestHeader, true);
+            //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+            //Console.Write("[ SEND  ] ");
+            //Console.Write("[" + requestHeader.type + "] ");
+            //Console.Write("[" + Marshal.SizeOf(requestHeader) + " bytes] ");
+            //Console.Write("[STATE." + requestHeader.state + "] ");
+            //Console.Write("[LENGTH." + requestHeader.length + "] ");
+            //Console.WriteLine("[  TO: Gin-Back-End]");
+            //Console.WriteLine(">>Forwarding " + requestHeader.type.ToString() + " to Gin Back-End Server. . .");
             SendData(backEndSession, headerByte);
 
             CFSignupRequestBody requestFromClient = (CFSignupRequestBody)Serializer.ByteToStructure(body, typeof(CFSignupRequestBody));
@@ -535,8 +586,8 @@ namespace LoginServer
 
             if (header.state == FBMessageState.Success)
             {
-                Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                Console.WriteLine("!!Client " + sessionId + " signed up successfully!");
+                //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+                //Console.WriteLine("!!Client " + sessionId + " signed up successfully!");
                 requestHeader.state = CFMessageState.SUCCESS;
             }
             else if (header.state == FBMessageState.Fail)
@@ -553,8 +604,9 @@ namespace LoginServer
             requestHeader.length = 0;
 
             byte[] headerByte = Serializer.StructureToByte(requestHeader);
-            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-            Console.WriteLine(">>Forwarding " + requestHeader.type + " to Client " + clientSession.sessionId + ". . .");
+            FormatMessage(requestHeader, true);
+            //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+            //Console.WriteLine(">>Forwarding " + requestHeader.type + " to Client " + clientSession.sessionId + ". . .");
             
             SendData(clientSession, headerByte);
         }
@@ -600,8 +652,15 @@ namespace LoginServer
             requestHeader.sessionId = sessionId;
 
             byte[] headerByte = Serializer.StructureToByte(requestHeader);
-            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-            Console.WriteLine(">>Forwarding " + requestHeader.type.ToString() + " to Gin Back-End Server. . .");
+            FormatMessage(requestHeader, true);
+            //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+            //Console.Write("[ SEND  ] ");
+            //Console.Write("[" + requestHeader.type + "] ");
+            //Console.Write("[" + Marshal.SizeOf(requestHeader) + " bytes] ");
+            //Console.Write("[STATE." + requestHeader.state + "] ");
+            //Console.Write("[LENGTH." + requestHeader.length + "] ");
+            //Console.WriteLine("[  TO: Gin-Back-End]");
+            //Console.WriteLine(">>Forwarding " + requestHeader.type.ToString() + " to Gin Back-End Server. . .");
             SendData(backEndSession, headerByte);
 
             //Body Forwarding
@@ -655,20 +714,22 @@ namespace LoginServer
                     {
                         if (header.state == FBMessageState.Success)
                         {
-                            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                            Console.WriteLine("!!Id " + sessionId + " not duplicated");
+                            //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+                            //Console.WriteLine("!!Id " + sessionId + " not duplicated");
                         }
                         responseHeader.type = CFMessageType.Id_Dup;
                         break;
                     }
                 case FBMessageType.Login:
                     {
+                        responseHeader.type = CFMessageType.LogIn;
                         if (header.state == FBMessageState.Success)
                         {
                             FBLoginResponseBody responseFromBackEnd = (FBLoginResponseBody)Serializer.ByteToStructure(body, typeof(FBLoginResponseBody));
                             clientSession.LogIn(responseFromBackEnd.id);
-                            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                            Console.WriteLine(">>" + new string (responseFromBackEnd.id) + " login-in credentials authorized.");
+                            //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+                            //Console.WriteLine(">>" + new string (responseFromBackEnd.id) + " login-in credentials authorized.");
+
                             //Transfer the back-end's response data to a body that the client can read
                             responseHeader.length = Marshal.SizeOf<CFLoginResponseBody>();
                             responseBody.ip = responseFromBackEnd.ip;
@@ -677,19 +738,19 @@ namespace LoginServer
                             responseBody.cookie = responseFromBackEnd.cookie;
 
 
-                            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                            Console.WriteLine(">>Forwarding " + responseHeader.type.ToString() + " to Client " + clientSession.sessionId + ". . .");
-                            Console.Write("\t\t>>IP " + new string (responseBody.ip));
-                            Console.WriteLine("\t>>Port " + responseBody.port.ToString());
-                            Console.Write("\t\t>>Proto " + responseBody.protocolType.ToString());
-                            Console.WriteLine("\t\t>>cookie " + responseBody.cookie.ToString());
+                            FormatMessage(responseHeader, true);
+                            //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+                            //Console.WriteLine(">>Forwarding " + responseHeader.type.ToString() + " to Client " + clientSession.sessionId + ". . .");
+                            Console.Write("\t\t>>IP: " + new string (responseBody.ip));
+                            Console.Write("\t>>Port: " + responseBody.port.ToString());
+                            Console.Write("\t>>Proto: \t" + responseBody.protocolType.ToString());
+                            Console.WriteLine("\t>>Cookie: " + responseBody.cookie.ToString());
                         }
                         else if (header.state == FBMessageState.Fail)
                         {
-                            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                            Console.WriteLine("!!Client " + sessionId + "'s Login Fail");
+                            //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+                            //Console.WriteLine("!!Client " + sessionId + "'s Login Fail");
                         }
-                        responseHeader.type = CFMessageType.LogIn;
                         break;
                     }
                 case FBMessageType.Logout:
@@ -700,13 +761,13 @@ namespace LoginServer
                                 return;
 
                             Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                            Console.WriteLine("!!Client " + sessionId + " is already Logged Out");
+                            Console.WriteLine("!!Client " + sessionId + " is already Logged Out.");
                             return;
                         }
                         if (header.state == FBMessageState.Success)
                         {
                             Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                            Console.WriteLine("!!Client " + new string(clientSession.id) + " is logged out");
+                            Console.WriteLine("!!Client " + new string(clientSession.id) + " is logged out.");
                             clientSession.LogOut();
                             if (clientSession.IsInRoom())
                             {
@@ -721,12 +782,12 @@ namespace LoginServer
                         responseHeader.type = CFMessageType.DeleteId;
                         if (header.state == FBMessageState.Success)
                         {
-                            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                            Console.WriteLine("!!Client " + sessionId + "'s Delete Account Request Success");
+                            //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+                            //Console.WriteLine("!!Client " + sessionId + "'s Delete Account Request Success");
                         } else
                         {
-                            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                            Console.WriteLine("!!Client " + sessionId + "'s Delete Account Request Fail");
+                            //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+                            //Console.WriteLine("!!Client " + sessionId + "'s Delete Account Request Fail");
                         }
                         break;
                     }
@@ -735,29 +796,33 @@ namespace LoginServer
                         responseHeader.type = CFMessageType.ChangePassword;
                         if (header.state == FBMessageState.Success)
                         {
-                            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                            Console.WriteLine("!!Client " + sessionId + "'s Change Password Request Success");
+                            //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+                            //Console.WriteLine("!!Client " + sessionId + "'s Change Password Request Success");
                         }
                         else
                         {
-                            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                            Console.WriteLine("!!Client " + sessionId + "'s Change Password Request Fail");
+                            //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+                            //Console.WriteLine("!!Client " + sessionId + "'s Change Password Request Fail");
                         }
                         break;
                     }
                 default:
                     Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
                     Console.WriteLine("**Undefined Login Message Type from Client " + clientSession.sessionId);
-                    Console.WriteLine();
                     return;
 
             }
 
 
             byte[] headerByte = Serializer.StructureToByte(responseHeader);
-            byte[] bodyByte = Serializer.StructureToByte(responseBody);
 
-            headerByte = CombineMessagesForClient(headerByte, bodyByte, null);
+            //We only need to send a body if the case is Login Success reporting back to the client
+            if (header.type == FBMessageType.Login && header.state == FBMessageState.Success)
+            {
+                byte[] bodyByte = Serializer.StructureToByte(responseBody);
+                headerByte = CombineMessagesForClient(headerByte, bodyByte, null);
+            }
+
             SendData(clientSession, headerByte);
         }
 
@@ -775,8 +840,9 @@ namespace LoginServer
 
             byte[] failBodyByte = Serializer.StructureToByte(failResponseBody);
 
-            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-            Console.WriteLine("**Responding " + responseHeader.type.ToString() + " fail to Client " + sessionId + ". . .");
+            FormatMessage(responseHeader, true);
+            //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+            //Console.WriteLine("**Responding " + responseHeader.type.ToString() + " fail to Client " + sessionId + ". . .");
             failHeaderByte = CombineMessagesForClient(failHeaderByte, failBodyByte, null);
             SendData(this, failHeaderByte);
             return;
@@ -795,8 +861,9 @@ namespace LoginServer
 
             byte[] failBodyByte = Serializer.StructureToByte(failResponseBody);
 
-            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-            Console.WriteLine("**Responding " + responseHeader.type.ToString() + " fail to Client " + sessionId + ". . .");
+            FormatMessage(responseHeader, true);
+            //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+            //Console.WriteLine("**Responding " + responseHeader.type.ToString() + " fail to Client " + sessionId + ". . .");
             failHeaderByte = CombineMessagesForClient(failHeaderByte, failBodyByte, null);
             SendData(this, failHeaderByte);
             return;
@@ -859,13 +926,16 @@ namespace LoginServer
             }
             return true;
         }
-        
-        public void ProcessTimeoutSession()
+
+        public bool ProcessTimeoutSession(out HeartBeatInfo heartBeatInfo)                                         //Health_check healthcheck heartbeat heart_beat
         {
+            heartBeatInfo = new HeartBeatInfo();
             if (socket == backEndSession.socket)
             {
                 if (!backEndSession.isHealthCheckSent)
                 {
+                    heartBeatInfo.clientID = sessionId;
+                    heartBeatInfo.healthCheckCount = healthCheckCount;
                     FBHeader header = new FBHeader();
 
                     header.type = FBMessageType.Health_Check;
@@ -874,20 +944,25 @@ namespace LoginServer
                     header.sessionId = backEndSession.sessionId;
 
                     byte[] headerByte = Serializer.StructureToByte(header);
-                    Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                    Console.WriteLine(">>Sending " + header.type.ToString() + " to Gin Back-End Server. . .");
+                    //FormatMessage(header, true);
+                    //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+                    //Console.WriteLine(">>Sending " + header.type.ToString() + " to Gin Back-End Server. . .");
                     SendData(backEndSession, headerByte);
                     backEndSession.healthCheckCount = 0;
                     backEndSession.ResetStartTime();
+                    return true;
                 }
                 else
                 {
                     backEndSession.isConnected = false;
                 }
-            } else
+            }
+            else
             {
                 if (!isHealthCheckSent)
                 {
+                    heartBeatInfo.clientID = sessionId;
+                    heartBeatInfo.healthCheckCount = healthCheckCount;
                     CFHeader header = new CFHeader();
 
                     header.type = CFMessageType.Health_Check;
@@ -895,11 +970,13 @@ namespace LoginServer
                     header.length = 0;
 
                     byte[] headerByte = Serializer.StructureToByte(header);
-                    Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-                    Console.WriteLine(">>Sending " + header.type.ToString() + " to Client " + sessionId + ". . .");
+                    //FormatMessage(header, true);
+                    //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+                    //Console.WriteLine(">>Sending " + header.type.ToString() + " to Client " + sessionId + ". . .");
                     SendData(this, headerByte);
                     ResetStartTime();
                     isHealthCheckSent = true;
+                    return true;
                 }
                 else
                 {
@@ -907,7 +984,7 @@ namespace LoginServer
                     isConnected = false;
                 }
             }
-            Console.WriteLine();
+            return false;
         }
 
         private void ConnectionCloseLogout()
@@ -921,6 +998,11 @@ namespace LoginServer
             fakeBody.id = id;
 
             byte[] fakeBodyByte = Serializer.StructureToByte(fakeBody);
+
+            if (!IsLogedIn())   //Don't resend a logout if already logged out
+            {
+                return;
+            }
 
             LoginMessage(fakeHeader, fakeBodyByte);
         }
@@ -968,11 +1050,12 @@ namespace LoginServer
             
             Array.Copy(data, headerByte, headerSize);
             header = (CFHeader)Serializer.ByteToStructure(headerByte, typeof(CFHeader));
-            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
-            Console.WriteLine("Web Socket Message Received from Client " + sessionId);
-            Console.Write("\t\t Type: " + header.type);
-            Console.Write("\t\t State: " + header.state);
-            Console.WriteLine("\t\t Length: " + header.length);
+            FormatMessage(header, false);
+            //Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+            //Console.WriteLine("Web Socket Message Received from Client " + sessionId);
+            //Console.Write("\t\t Type: " + header.type);
+            //Console.Write("\t\t State: " + header.state);
+            //Console.WriteLine("\t\t Length: " + header.length);
             bodyLength = header.length;
 
             if (data.Length < headerSize + bodyLength)
@@ -981,7 +1064,6 @@ namespace LoginServer
                 Console.WriteLine("Body data from WebSocket incomplete from Client " + sessionId);
                 return;
             }
-            Console.WriteLine();
 
             body = new byte[bodyLength];
             Array.Copy(data, headerSize, body, 0, bodyLength);
@@ -990,6 +1072,124 @@ namespace LoginServer
         }
 
         /******Web Socket Functions End******/
+        
+        private void FormatMessage (CFHeader header, bool isSend)
+        {
+            int spacerLength;
+            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+            if (isSend)
+            {
+                Console.Write("[  SEND ] ");
+            } else
+            {
+                Console.Write("[RECEIVE] ");
+            }
+            spacerLength = header.type.ToString().Length;
+            spacerLength = 20 - spacerLength;
+            if (spacerLength < 0)
+            {
+                spacerLength = 0;
+            }
+            Console.Write("[");
+            Console.Write(header.type);
+            for (int i = 0; i < spacerLength; i++)
+            {
+                Console.Write(" ");
+            }
+            Console.Write("] ");
+            if (header.state == CFMessageState.FAIL)
+            {
+                Console.Write("[STATE:  " + header.state + " ] ");
+            } else
+            {
+                Console.Write("[STATE:" + header.state + "] ");
+            }
+            spacerLength = header.length.ToString().Length;
+            spacerLength = 5 - spacerLength;
+            if (spacerLength < 0)
+            {
+                spacerLength = 0;
+            }
+            Console.Write("[BODY:");
+            for (int i = 0; i < spacerLength; i++)
+            {
+                Console.Write(" ");
+            }
+            Console.Write(header.length + "] ");
+            if (isSend)
+            {
+                Console.Write("[  TO: Client " + sessionId + "] ");
+            } else
+            {
+                Console.Write("[FROM: Client " + sessionId + "] ");
+            }
+            //if (header.type == CFMessageType.Health_Check)
+            //{
+            //    Console.Write("[COUNT: " + healthCheckCount + "] ");
+            //}
+            Console.WriteLine();
+        }
+        private void FormatMessage(FBHeader header, bool isSend)
+        {
+            int spacerLength;
+            Console.Write("[" + DateTime.Now.ToShortTimeString() + "] ");
+            if (isSend)
+            {
+                Console.Write("[  SEND ] ");
+            }
+            else
+            {
+                Console.Write("[RECEIVE] ");
+            }
+            spacerLength = header.type.ToString().Length;
+            spacerLength = 20 - spacerLength;
+            if (spacerLength < 0)
+            {
+                spacerLength = 0;
+            }
+            Console.Write("[");
+            Console.Write(header.type);
+            for (int i = 0; i < spacerLength; i++)
+            {
+                Console.Write(" ");
+            }
+            Console.Write("] ");
+            if (header.state == FBMessageState.Fail)
+            {
+                Console.Write("[STATE:  " + header.state + " ] ");
+            }
+            else
+            {
+                Console.Write("[STATE:" + header.state + "] ");
+            }
+            spacerLength = header.length.ToString().Length;
+            spacerLength = 5 - spacerLength;
+            if (spacerLength < 0)
+            {
+                spacerLength = 0;
+            }
+            Console.Write("[BODY:");
+            for (int i = 0; i < spacerLength; i++)
+            {
+                Console.Write(" ");
+            }
+            Console.Write(header.length + "] ");
+            if (isSend)
+            {
+                Console.Write("[  TO: Gin Back-End] ");
+            }
+            else
+            {
+                Console.Write("[FROM: Gin Back-End] ");
+            }
+            Console.Write("[SERVING: Client " + header.sessionId + "] ");
+            //if (header.type == FBMessageType.Health_Check)
+            //{
+            //    Console.Write("[COUNT: " + healthCheckCount + "] ");
+            //}
+            Console.WriteLine();
+        }
+
     }
 
 }
